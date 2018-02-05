@@ -2,6 +2,11 @@ package campusManagement;
 
 import java.time.LocalDateTime;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import exceptions.*;
 
 /**
  * Class represents a campus management system
@@ -96,8 +101,9 @@ public class CampusManagement {
 	 * @param dateBegin
 	 * @param dateEnd
 	 * @return
+	 * @throws CampusManagementException 
 	 */
-	public Examination addExamination(String name, int creditPoints, LocalDateTime dateBegin, LocalDateTime dateEnd) {
+	public Examination addExamination(String name, int creditPoints, LocalDateTime dateBegin, LocalDateTime dateEnd) throws CampusManagementException {
 		return addPastExamination(name, creditPoints, currentSemester, dateBegin, dateEnd);
 	}
 
@@ -111,13 +117,24 @@ public class CampusManagement {
 	 * @param dateBegin
 	 * @param dateEnd
 	 * @return
+	 * @throws CampusManagementException 
 	 */
 	public Examination addPastExamination(String name, int creditPoints, Semester semester, LocalDateTime dateBegin,
-			LocalDateTime dateEnd) {
+			LocalDateTime dateEnd) throws CampusManagementException {
+		if(creditPoints < 1 || dateBegin.getDayOfYear() != dateEnd.getDayOfYear() ||
+				dateBegin.getHour() >= dateEnd.getHour())
+			throw new InvalidValueException("MSG");//TODO
+		
+		for(Examination a : examinations)
+			if(a.getName().equals(name))
+				throw new ExaminationAlreadyExistsException("MSG");//TODO
+				
 		Examination newExamination = new Examination(name, creditPoints, semester, dateBegin, dateEnd);
 		examinations.add(newExamination);
 		return newExamination;
+	
 	}
+	
 
 	/**
 	 * Registers a given student to a given examination
@@ -137,11 +154,123 @@ public class CampusManagement {
 	 * @param grade
 	 * @param student
 	 * @param examination
+	 * @throws CampusManagementException 
 	 */
-	public void addExaminationGradeForStudent(double grade, Student student, Examination examination) {
+	public void addExaminationGradeForStudent(double grade, Student student, Examination examination) throws CampusManagementException {
+		boolean std = false;
+		for(Student std1 : examination.getStudentsRegistered())
+			if(std1.equals(student)) std = true;
+		if(!std) throw new StudentRegistrationException("MSG");//TODO
+			
+		try{
+		getFilteredExaminations(filterExaminationsByName(examination.getName())).get(0)
+		.getFilteredGrades(examination.filterGradesByStudent(student)).get(0);
+		}
+		catch(Exception e){
+			throw new GradeAlreadyExistsException("MSG");//TODO
+		}
+		
+		
+		if(grade != 1.0 || grade != 1.3 || grade != 1.7 || grade != 2.0 ||
+				grade != 2.3 || grade != 2.7 || grade != 3.0 || grade != 3.3 
+				|| grade != 3.7 || grade != 4.0 || grade != 5.0 )
+			throw new InvalidValueException("MSG");//TODO
 		ExaminationGrade examinationGrade = new ExaminationGrade(grade, student, examination);
 		student.getGrades().add(examinationGrade);
 		examination.getGrades().add(examinationGrade);
 	}
-
+	
+	/**
+	 * liefert ein Filter-
+	 * Prädikat zurück, das alle Studenten mit dem übergebenen Vor- und Nachname selektiert.
+	 * Groß- und Kleinschreibung soll dabei ignoriert werden
+	 * 
+	 * @param firstName
+	 * @param lastName
+	 * @return
+	 */
+	public Predicate<Student> filterStudentsByName(String firstName, String lastName){
+		return (std -> std.getFirstName().toLowerCase().equals(firstName.toLowerCase()) && 
+				std.getLastName().toLowerCase().equals(lastName.toLowerCase()));
+	}
+	
+	/**
+	 * liefert ein Filter-
+	 * Prädikat zurück, das alle Studenten mit der übergebenen Matrikelnummer selektiert
+	 * 
+	 * @param matriculationNumber
+	 * @return
+	 */
+	public Predicate<Student> filterStudentsByMatriculationNumber(int matriculationNumber){
+		return (std -> std.getMatriculationNumber() == matriculationNumber);
+	}
+	
+	/**
+	 * 	liefert ein Filter-Prädikat zurück, das alle Studenten mit dem übergebenen 
+	 * Studiengang selektiert. Groß- undKleinschreibung soll dabei ignoriert werden.
+	 * 
+	 * @param courseOfStudies
+	 * @return
+	 */
+	public Predicate<Student> filterStudentsByCourseOfStudies(String courseOfStudies){
+		return (std -> std.getCourseOfStudies().toLowerCase().equals(courseOfStudies.toLowerCase()));
+	}
+	
+	/**
+	 * bekommt ein Filter-Prädikat übergeben und liefert alle im System
+	 * registrierten Studenten in einer java.util.List zurück, die der 
+	 * Filter nicht aussortiert hat.
+	 * 
+	 * @param filter
+	 * @return
+	 */
+	public List<Student> getFilteredStudents(Predicate<Student> filter){ 
+		return students.stream().filter(filter).collect(Collectors.toList()); // AGHA alan bas negatiov ina biad ya hamina ? 
+	}
+	
+	/**
+	 * liefert ein Filter-Prädikat zurück,das alle Prüfungen mit dem 
+	 * übergebenen Name selektiert. Groß- und Kleinschreibungsoll 
+	 * dabei ignoriert werden.
+	 * 
+	 * @param name
+	 * @return
+	 */
+	public Predicate<Examination> filterExaminationsByName(String name){
+		return (exm -> exm.getName().toLowerCase().equals(name.toLowerCase()));
+	}
+	
+	/**
+	 * liefert ein Filter-Prädikat zurück das alle Prüfungen
+	 *  mit der übergebenen Anzahl an Credit Points selektiert.
+	 * 
+	 * @param cp
+	 * @return
+	 */
+	public Predicate<Examination> filterExaminationsByCreditPoints(int cp){
+		return (exm -> exm.getCreditPoints() == cp);
+	}
+	
+	/**
+	 * liefert ein Filter-Prädikat zurück, das alle Prüfungen die 
+	 * in dem übergebenen Semester stattfinden selektiert.
+	 * 
+	 * @param semester
+	 * @return
+	 */
+	public Predicate<Examination> filterExaminationsBySemester(Semester semester){
+		return (exm -> exm.getSemester().equals(semester));
+	}
+	
+	/**
+	 * bekommt ein Filter-Prädikat übergeben und liefert alle im System 
+	 * registrierten Prüfungen in einer java.util.Listzurück, die der Filter 
+	 * nicht aussortiert hat.
+	 * 
+	 * @param filter
+	 * @return
+	 */
+	public List<Examination> getFilteredExaminations(Predicate<Examination> filter){
+		return examinations.stream().filter(filter).collect(Collectors.toList());
+	}
 }
