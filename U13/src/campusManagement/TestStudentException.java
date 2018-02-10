@@ -8,6 +8,16 @@ import java.time.format.DateTimeFormatter;
 import org.junit.Before;
 import org.junit.*;
 
+
+
+/**
+ * 
+ * @author      	 Shayan     Davari fard
+ * @author    Mohammadrahim     Masoumi
+ * @author       	  Arian     Tashakkornojehdehi
+ * 
+ * @version 1
+ */
 public class TestStudentException {
 	static CampusManagement management;
 	static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");

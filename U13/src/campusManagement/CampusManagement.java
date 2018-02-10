@@ -12,6 +12,11 @@ import exceptions.*;
  * Class represents a campus management system
  * 
  * @author Lukas Roehrig
+ * @author      	 Shayan     Davari fard
+ * @author    Mohammadrahim     Masoumi
+ * @author       	  Arian     Tashakkornojehdehi
+ * 
+ * @version 1
  */
 public class CampusManagement {
 
@@ -88,9 +93,9 @@ public class CampusManagement {
 	 * @throws InvalidValueException 
 	 */
 	public Student addStudent(String firstName, String lastName, int matriculationNumber, String courseOfStudies) throws InvalidValueException {
-		
+		// REGEL 7
 		if(!(getFilteredStudents(filterStudentsByMatriculationNumber(matriculationNumber)).isEmpty()))
-			throw new InvalidValueException("MSG");//TODO
+			throw new InvalidValueException("Matrikelnummer bereits von einem vorhandenen Studenten verwendetwird.");
 		
 		Student newStudent = new Student(firstName, lastName, matriculationNumber, courseOfStudies, currentSemester);
 		students.add(newStudent);
@@ -128,16 +133,16 @@ public class CampusManagement {
 			LocalDateTime dateEnd) throws CampusManagementException {
 		// REGEL 1
 		if(creditPoints < 1 )
-			throw new InvalidValueException("MSG");//TODO
+			throw new InvalidValueException("Credit Point kleiner 1 ist");
 		// REGEL 2
 		if(dateBegin.getDayOfYear() != dateEnd.getDayOfYear() ||
 				dateBegin.getHour() >= dateEnd.getHour())
-			throw new InvalidValueException("MSG");//TODO
+			throw new InvalidValueException("Datum oder Uhrzeit passt nicht");//TODO
 
 		// REGEL 3
 		if(!(getFilteredExaminations(filterExaminationsByName(name)).isEmpty()))
 			if(getFilteredExaminations(filterExaminationsByName(name)).get(0).getSemester().equals(semester))
-				throw new ExaminationAlreadyExistsException("MSG");//TODO
+				throw new ExaminationAlreadyExistsException("eine Prüfung mit exakt dem gleichen Namen im selben Semester vorhanden ist.");//TODO
 				
 		Examination newExamination = new Examination(name, creditPoints, semester, dateBegin, dateEnd);
 		examinations.add(newExamination);
@@ -153,12 +158,12 @@ public class CampusManagement {
 	 * @throws StudentRegistrationException 
 	 */
 	public void registerStudentForExamination(Student student, Examination examination) throws StudentRegistrationException {
-		
+		// REGEL 8
 		if(getFilteredExaminations(filterExaminationsByName(examination.getName())).get(0)
 				.getStudentsRegistered().stream()
 				.filter(filterStudentsByMatriculationNumber
 						(student.getMatriculationNumber())).count() != 0)
-			throw new StudentRegistrationException("inja"); //TODO
+			throw new StudentRegistrationException("Student bereits für die übergebene Prüfung angemeldet ist."); //TODO
 		
 		student.getExaminationsRegistered().add(examination);
 		examination.getStudentsRegistered().add(student);
@@ -175,24 +180,24 @@ public class CampusManagement {
 	 */
 	public void addExaminationGradeForStudent(double grade, Student student,
 			Examination examination) throws CampusManagementException {
-		
+		// REGEL 4
 		boolean temp = true;
 		for(Examination exm : student.getExaminationsRegistered())
 			if(exm.equals(examination))
 				temp = false;
 		if(temp)
-			throw new StudentRegistrationException("MSG");
+			throw new StudentRegistrationException("Student nicht für die übergebene Prüfung angemeldet ist.");
 		
 		
-		
+		// REGEL 5
 		if(student.getGrades().stream().filter(grd -> grd.getExamination().equals(examination)).count() != 0 )
-			throw new GradeAlreadyExistsException("MSG");//TODO
+			throw new GradeAlreadyExistsException("Student in der übergebene Prüfung bereits benotet wurde.");
 		
-		
+		// REGEL 6
 		if(!(grade == 1.0 || grade == 1.3 || grade == 1.7 || grade == 2.0 ||
 				grade == 2.3 || grade == 2.7 || grade == 3.0 || grade == 3.3 
 				|| grade == 3.7 || grade == 4.0 || grade == 5.0 ))
-			throw new InvalidValueException("MSG");//TODO
+			throw new InvalidValueException("Note nicht zum Notenschema gehört");
 		
 		ExaminationGrade examinationGrade = new ExaminationGrade(grade, student, examination);
 		student.getGrades().add(examinationGrade);
