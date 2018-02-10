@@ -157,7 +157,7 @@ public class CampusManagement {
 		if(getFilteredExaminations(filterExaminationsByName(examination.getName())).get(0)
 				.getStudentsRegistered().stream()
 				.filter(filterStudentsByMatriculationNumber
-						(student.getMatriculationNumber())).count() > 0)
+						(student.getMatriculationNumber())).count() != 0)
 			throw new StudentRegistrationException("MSG"); //TODO
 		
 		student.getExaminationsRegistered().add(examination);
