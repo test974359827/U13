@@ -85,8 +85,13 @@ public class CampusManagement {
 	 * @param matriculationNumber
 	 * @param courseOfStudies
 	 * @return
+	 * @throws InvalidValueException 
 	 */
-	public Student addStudent(String firstName, String lastName, int matriculationNumber, String courseOfStudies) {
+	public Student addStudent(String firstName, String lastName, int matriculationNumber, String courseOfStudies) throws InvalidValueException {
+		
+		if(!(getFilteredStudents(filterStudentsByMatriculationNumber(matriculationNumber)).isEmpty()))
+			throw new InvalidValueException("MSG");//TODO
+		
 		Student newStudent = new Student(firstName, lastName, matriculationNumber, courseOfStudies, currentSemester);
 		students.add(newStudent);
 		return newStudent;
@@ -121,18 +126,22 @@ public class CampusManagement {
 	 */
 	public Examination addPastExamination(String name, int creditPoints, Semester semester, LocalDateTime dateBegin,
 			LocalDateTime dateEnd) throws CampusManagementException {
-		if(creditPoints < 1 || dateBegin.getDayOfYear() != dateEnd.getDayOfYear() ||
+		// REGEL 1
+		if(creditPoints < 1 )
+			throw new InvalidValueException("MSG");//TODO
+		// REGEL 2
+		if(dateBegin.getDayOfYear() != dateEnd.getDayOfYear() ||
 				dateBegin.getHour() >= dateEnd.getHour())
 			throw new InvalidValueException("MSG");//TODO
-		
-		for(Examination a : examinations)
-			if(a.getName().equals(name))
+
+		// REGEL 3
+		if(!(getFilteredExaminations(filterExaminationsByName(name)).isEmpty()))
+			if(getFilteredExaminations(filterExaminationsByName(name)).get(0).getSemester().equals(semester))
 				throw new ExaminationAlreadyExistsException("MSG");//TODO
 				
 		Examination newExamination = new Examination(name, creditPoints, semester, dateBegin, dateEnd);
 		examinations.add(newExamination);
 		return newExamination;
-	
 	}
 	
 
@@ -141,8 +150,16 @@ public class CampusManagement {
 	 * 
 	 * @param student
 	 * @param examination
+	 * @throws StudentRegistrationException 
 	 */
-	public void registerStudentForExamination(Student student, Examination examination) {
+	public void registerStudentForExamination(Student student, Examination examination) throws StudentRegistrationException {
+		
+		if(getFilteredExaminations(filterExaminationsByName(examination.getName())).get(0)
+				.getStudentsRegistered().stream()
+				.filter(filterStudentsByMatriculationNumber
+						(student.getMatriculationNumber())).count() > 0)
+			throw new StudentRegistrationException("MSG"); //TODO
+		
 		student.getExaminationsRegistered().add(examination);
 		examination.getStudentsRegistered().add(student);
 	}
@@ -156,25 +173,26 @@ public class CampusManagement {
 	 * @param examination
 	 * @throws CampusManagementException 
 	 */
-	public void addExaminationGradeForStudent(double grade, Student student, Examination examination) throws CampusManagementException {
-		boolean std = false;
-		for(Student std1 : examination.getStudentsRegistered())
-			if(std1.equals(student)) std = true;
-		if(!std) throw new StudentRegistrationException("MSG");//TODO
-			
-		try{
-		getFilteredExaminations(filterExaminationsByName(examination.getName())).get(0)
-		.getFilteredGrades(examination.filterGradesByStudent(student)).get(0);
-		}
-		catch(Exception e){
+	public void addExaminationGradeForStudent(double grade, Student student,
+			Examination examination) throws CampusManagementException {
+		
+		boolean temp = true;
+		for(Examination exm : student.getExaminationsRegistered())
+			if(exm.equals(examination))
+				temp = false;
+		if(temp)
+			throw new StudentRegistrationException("MSG");
+		
+		
+		
+		if(student.getGrades().stream().filter(grd -> grd.getExamination().equals(examination)).count() != 0 )
 			throw new GradeAlreadyExistsException("MSG");//TODO
-		}
 		
-		
-		if(grade != 1.0 || grade != 1.3 || grade != 1.7 || grade != 2.0 ||
-				grade != 2.3 || grade != 2.7 || grade != 3.0 || grade != 3.3 
-				|| grade != 3.7 || grade != 4.0 || grade != 5.0 )
+		if(!(grade == 1.0 || grade == 1.3 || grade == 1.7 || grade == 2.0 ||
+				grade == 2.3 || grade == 2.7 || grade == 3.0 || grade == 3.3 
+				|| grade == 3.7 || grade == 4.0 || grade == 5.0 ))
 			throw new InvalidValueException("MSG");//TODO
+		
 		ExaminationGrade examinationGrade = new ExaminationGrade(grade, student, examination);
 		student.getGrades().add(examinationGrade);
 		examination.getGrades().add(examinationGrade);
