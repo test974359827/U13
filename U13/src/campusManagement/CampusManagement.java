@@ -158,7 +158,7 @@ public class CampusManagement {
 				.getStudentsRegistered().stream()
 				.filter(filterStudentsByMatriculationNumber
 						(student.getMatriculationNumber())).count() != 0)
-			throw new StudentRegistrationException("MSG"); //TODO
+			throw new StudentRegistrationException("inja"); //TODO
 		
 		student.getExaminationsRegistered().add(examination);
 		examination.getStudentsRegistered().add(student);
@@ -187,6 +187,7 @@ public class CampusManagement {
 		
 		if(student.getGrades().stream().filter(grd -> grd.getExamination().equals(examination)).count() != 0 )
 			throw new GradeAlreadyExistsException("MSG");//TODO
+		
 		
 		if(!(grade == 1.0 || grade == 1.3 || grade == 1.7 || grade == 2.0 ||
 				grade == 2.3 || grade == 2.7 || grade == 3.0 || grade == 3.3 
